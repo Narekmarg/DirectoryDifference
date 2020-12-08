@@ -43,7 +43,7 @@ namespace DirectoryDifference
                 return;
             }
             
-            string[] extensions = {".docx", ".doc", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"};
+            string[] extensions = new[] {".docx", ".doc", ".xls", ".xlsx", ".ppt", ".pptx", ".pdf"};
             
             Directory.CreateDirectory(directoryToCopyTo);
 
@@ -59,7 +59,7 @@ namespace DirectoryDifference
                 try
                 {
                     Console.WriteLine($"Copying file: {file.FilePath}");
-                    File.Copy(file.FilePath!, copyPath);
+                    File.Copy(file.FilePath, copyPath);
                 }
                 catch
                 {
@@ -71,9 +71,11 @@ namespace DirectoryDifference
 
         public static byte[] ComputeHash(string filePath)
         {
-            using var md5 = MD5.Create();
-            using var stream = File.OpenRead(filePath);
-            return md5.ComputeHash(stream);
+            using (var md5 = MD5.Create())
+            using (var stream = File.OpenRead(filePath))
+            {
+                return md5.ComputeHash(stream);
+            }
         }
         
         
@@ -90,7 +92,7 @@ namespace DirectoryDifference
                 catch(Exception ex) {
                     Console.Error.WriteLine(ex);
                 }
-                string[] files = null;
+                string[]? files = default;
                 try {
                     files = Directory.GetFiles(path);
                 }
@@ -111,25 +113,25 @@ namespace DirectoryDifference
 
     public class HashEntry : IEquatable<HashEntry>
     {
-        private readonly byte[] _hash;
+        private byte[] Hash { get; }
 
         public HashEntry(byte[] hash, string filePath)
         {
             FilePath = filePath;
-            _hash = hash;
+            Hash = hash;
         }
         
         public string FilePath { get; }
 
         public bool Equals(HashEntry other) => 
-            _hash.Zip(other!._hash, (x, y) => x == y).All(x => x);
+            other != null && Hash.Zip(other.Hash, (x, y) => x == y).All(x => x);
 
         public override int GetHashCode()
         {
             unchecked
             {
                 const int p = 16777619;
-                var hash = _hash.Aggregate((int) 2166136261, (current, t) => (current ^ t) * p);
+                var hash = Hash.Aggregate((int) 2166136261, (current, t) => (current ^ t) * p);
 
                 hash += hash << 13;
                 hash ^= hash >> 7;
